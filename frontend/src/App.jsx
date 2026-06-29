@@ -206,20 +206,10 @@ export default function App() {
         /* Catalog Homepage view displaying cards dynamically */
         <motion.div 
           key="catalog"
-          initial={{ opacity: 0, backgroundColor: '#070605' }}
-          animate={{ 
-            opacity: 1, 
-            backgroundColor: ['#3a2d16', '#070605', '#3a2d16', '#070605']
-          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ 
-            opacity: { duration: 0.5 },
-            backgroundColor: {
-              duration: 12,
-              repeat: Infinity,
-              ease: 'easeInOut'
-            }
-          }}
+          transition={{ duration: 0.5 }}
           className="catalog-view"
         >
           {/* Animated Glow Spotlights */}

@@ -148,7 +148,7 @@
 .catalog-view {
   width: 100vw;
   min-height: 100vh;
-  background-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.8) 100%);
+  background: radial-gradient(circle at 50% 50%, #7c6433 0%, #3e321a 65%, #0a0804 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
