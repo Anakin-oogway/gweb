@@ -18,6 +18,15 @@ const JewelrySchema = new mongoose.Schema({
     type: Number, 
     required: true 
   },
+  originalPrice: {
+    type: Number
+  },
+  subtitle: {
+    type: String
+  },
+  extraPrice: {
+    type: String
+  },
   description: { 
     type: String 
   },

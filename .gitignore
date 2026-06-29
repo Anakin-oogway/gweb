@@ -33,3 +33,6 @@ lerna-debug.log*
 *.sw?
 .DS_Store
 Thumbs.db
+
+# Project reference files
+home page reference image.png

@@ -69,13 +69,25 @@ const gridCardVariants = {
 
 export default function App() {
   const [view, setView] = useState('catalog'); // 'catalog' or 'detail'
-  
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [wishlist, setWishlist] = useState({
+    gold_necklace: false,
+    cuban_chain: false,
+    chain_set: false
+  });
+  const [toastMessage, setToastMessage] = useState('');
+  const [particles, setParticles] = useState([]);
+
   // Resilient fallback dataset if database API is offline
   const fallbackModels = [
     { 
       modelId: 'gold_necklace', 
       name: 'Classic 18K Gold Rope Chain',
-      price: 1299.00,
+      subtitle: 'Refined & Sleek',
+      price: 7999.00,
+      originalPrice: 99.00,
+      extraPrice: '325.00',
+      imagePath: '/images/gold_rope_chain.jpg',
       material: '18K Yellow Gold Solid',
       weight: '24.5g',
       glbPath: '/models/gold_necklace__chain.glb',
@@ -85,7 +97,11 @@ export default function App() {
     { 
       modelId: 'cuban_chain', 
       name: 'Miami Cuban Link Choker',
-      price: 3450.00,
+      subtitle: 'Rustic Choker',
+      price: 3169.00,
+      originalPrice: 69.00,
+      extraPrice: '35.00',
+      imagePath: '/images/cuban_link_choker.jpg',
       material: '14K Yellow Gold Solid',
       weight: '62.1g',
       glbPath: '/models/cuban_chain.glb',
@@ -95,7 +111,11 @@ export default function App() {
     { 
       modelId: 'chain_set', 
       name: 'Signature Double Chain Combo',
-      price: 7800.00,
+      subtitle: 'Double Choker',
+      price: 7699.00,
+      originalPrice: 99.00,
+      extraPrice: '73.00',
+      imagePath: '/images/double_chain_combo.jpg',
       material: '18K Gold & Sterling Silver',
       weight: '88.3g',
       glbPath: '/models/chain_set.glb',
@@ -107,30 +127,78 @@ export default function App() {
   const [models, setModels] = useState(fallbackModels);
   const [activeModel, setActiveModel] = useState(fallbackModels[0]);
 
-  // Fetch products database from Express API
-  const fetchJewelry = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/jewelry`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.length > 0) {
-          // Merge database entries with dynamic client-side color themes
-          const mergedData = data.map(item => {
-            const theme = themeConfig[item.modelId] || themeConfig.gold_necklace;
-            return { ...item, ...theme };
-          });
-          setModels(mergedData);
-          setActiveModel(mergedData[0]);
+  // Fetch products database from Express API on mount, generate particles
+  useEffect(() => {
+    const fetchJewelry = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/jewelry`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.length > 0) {
+            // Merge database entries with dynamic client-side configurations
+            const mergedData = data.map(item => {
+              const theme = themeConfig[item.modelId] || themeConfig.gold_necklace;
+              
+              // Map fallback properties if not populated from MongoDB
+              let imagePath = '/images/gold_rope_chain.jpg';
+              if (item.modelId === 'cuban_chain') imagePath = '/images/cuban_link_choker.jpg';
+              if (item.modelId === 'chain_set') imagePath = '/images/double_chain_combo.jpg';
+
+              return {
+                subtitle: item.modelId === 'gold_necklace' ? 'Refined & Sleek' : item.modelId === 'cuban_chain' ? 'Rustic Choker' : 'Double Choker',
+                originalPrice: item.modelId === 'gold_necklace' ? 99.00 : item.modelId === 'cuban_chain' ? 69.00 : 99.00,
+                extraPrice: item.modelId === 'gold_necklace' ? '325.00' : item.modelId === 'cuban_chain' ? '35.00' : '73.00',
+                imagePath,
+                ...item, 
+                ...theme
+              };
+            });
+            setModels(mergedData);
+            setActiveModel(mergedData[0]);
+          }
         }
+      } catch (err) {
+        console.warn('Backend API offline, operating in client-side fallback:', err);
       }
-    } catch (err) {
-      console.warn('Backend API offline, operating in client-side fallback:', err);
+    };
+
+    fetchJewelry();
+
+    // Generate gold sparkles background particles
+    const generatedParticles = Array.from({ length: 22 }).map((_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 70 + 15}%`,
+      size: Math.random() * 2.5 + 1.2,
+      delay: Math.random() * 6,
+      duration: Math.random() * 5 + 4,
+      op: Math.random() * 0.4 + 0.3
+    }));
+    setParticles(generatedParticles);
+  }, []);
+
+  // Update active model when activeIndex in carousel shifts
+  useEffect(() => {
+    if (models[activeIndex]) {
+      setActiveModel(models[activeIndex]);
     }
+  }, [activeIndex, models]);
+
+  const toggleWishlist = (modelId, e) => {
+    e.stopPropagation();
+    setWishlist(prev => ({
+      ...prev,
+      [modelId]: !prev[modelId]
+    }));
   };
 
-  useEffect(() => {
-    fetchJewelry();
-  }, []);
+  const handleAddToCart = (model, e) => {
+    e.stopPropagation();
+    setToastMessage(`Added "${model.name}" to Cart!`);
+    setTimeout(() => {
+      setToastMessage('');
+    }, 2800);
+  };
 
   return (
     <AnimatePresence mode="wait">
@@ -139,31 +207,41 @@ export default function App() {
         <motion.div 
           key="catalog"
           initial={{ opacity: 0 }}
-          animate={{ 
-            opacity: 1,
-            backgroundColor: ['#9B8145', '#808487', '#9B8145']
-          }}
+          animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ 
-            opacity: { duration: 0.6 },
-            backgroundColor: {
-              duration: 12,
-              repeat: Infinity,
-              ease: 'easeInOut'
-            }
-          }}
+          transition={{ duration: 0.5 }}
           className="catalog-view"
         >
+          {/* Animated Glow Spotlights */}
+          <div className="catalog-spotlight" />
+
+          {/* Floating Gold Sparkle Dust */}
+          {particles.map((p) => (
+            <div 
+              key={p.id}
+              className="gold-particle"
+              style={{
+                left: p.left,
+                top: p.top,
+                width: `${p.size}px`,
+                height: `${p.size}px`,
+                animationDelay: `${p.delay}s`,
+                animationDuration: `${p.duration}s`,
+                '--op': p.op
+              }}
+            />
+          ))}
+
           <div className="catalog-header" style={{ zIndex: 10 }}>
             <motion.div 
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.5 }}
               className="nav-brand"
-              style={{ justifyContent: 'center', marginBottom: '24px' }}
+              style={{ justifyContent: 'center', marginBottom: '20px' }}
             >
-              <span className="brand-dot" style={{ backgroundColor: '#B76E79', boxShadow: '0 0 12px #B76E79' }}></span>
-              <span className="brand-text" style={{ color: '#ffffff' }}>MERN SPACE</span>
+              <span className="brand-dot" style={{ backgroundColor: '#e5c07b', boxShadow: '0 0 12px #e5c07b' }}></span>
+              <span className="brand-text" style={{ color: '#FAF6EC' }}>MERN SPACE</span>
             </motion.div>
             
             <motion.h2 
@@ -180,62 +258,124 @@ export default function App() {
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              Select a piece to launch the interactive 3D studio experience
+              Swipe or select a piece to launch the interactive 3D studio experience
             </motion.p>
           </div>
 
-          <motion.div 
-            className="catalog-grid"
-            variants={gridContainerVariants}
-            initial="hidden"
-            animate="show"
-            style={{ zIndex: 10 }}
-          >
-            {models.map((model) => (
-              <motion.div
-                key={model.modelId}
-                className="catalog-card"
-                variants={gridCardVariants}
-                onClick={() => {
-                  setActiveModel(model);
-                  setView('detail');
-                }}
-                whileHover={{ y: -8 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                style={{ 
-                  background: model.cardBg, 
-                  borderColor: model.cardBorder,
-                  color: model.cardText 
-                }}
-              >
-                <div className="card-tag" style={{ color: model.cardTagColor }}>
-                  {model.material}
-                </div>
-                <h3 className="card-name" style={{ color: model.cardText }}>{model.name}</h3>
-                <p style={{ fontSize: '13px', color: model.cardDescColor, margin: '4px 0 0 0', lineHeight: '1.6' }}>
-                  {model.description.length > 100 ? `${model.description.substring(0, 100)}...` : model.description}
-                </p>
-                
-                <div className="card-price-row" style={{ borderTopColor: 'rgba(255, 255, 255, 0.05)' }}>
-                  <span className="card-price" style={{ color: model.cardText }}>
-                    ${typeof model.price === 'number' ? model.price.toLocaleString(undefined, {minimumFractionDigits: 2}) : model.price}
-                  </span>
-                  <span className="card-currency" style={{ color: `${model.cardDescColor}99` }}>USD</span>
-                </div>
-                
-                <div 
-                  className="btn-explore"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.06)',
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
-                    color: '#ffffff'
-                  }}
-                >
-                  Launch 3D Experience
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
+          {/* Carousel Slider Layout */}
+          <div className="catalog-carousel-container">
+            {/* Left navigation arrow */}
+            <button 
+              className="carousel-nav-btn"
+              onClick={() => setActiveIndex(prev => (prev - 1 + models.length) % models.length)}
+              aria-label="Previous Item"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+
+            {/* Carousel track containing the cards */}
+            <motion.div 
+              className="carousel-cards-wrapper"
+              variants={gridContainerVariants}
+              initial="hidden"
+              animate="show"
+            >
+              {models.map((model, idx) => {
+                const isActive = idx === activeIndex;
+                return (
+                  <motion.div
+                    key={model.modelId}
+                    className={`luxury-card ${isActive ? 'active-card' : ''}`}
+                    variants={gridCardVariants}
+                    onClick={() => {
+                      setActiveIndex(idx);
+                      // If it's already the active card, clicking it goes to the details
+                      if (isActive) {
+                        setView('detail');
+                      }
+                    }}
+                    whileHover={{ y: -6 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  >
+                    {/* Top image and wishlist */}
+                    <div className="card-image-container">
+                      <img 
+                        src={model.imagePath} 
+                        alt={model.name} 
+                        className="card-product-image" 
+                        loading="lazy"
+                      />
+                      <button 
+                        className={`wishlist-btn ${wishlist[model.modelId] ? 'liked' : ''}`}
+                        onClick={(e) => toggleWishlist(model.modelId, e)}
+                        aria-label="Add to Wishlist"
+                      >
+                        {wishlist[model.modelId] ? (
+                          <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                          </svg>
+                        ) : (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Card Info details */}
+                    <div className="card-info-container">
+                      <h3 className="card-title-text">{model.name}</h3>
+                      <span className="card-subtitle-text">{model.subtitle}</span>
+
+                      {/* Prices row */}
+                      <div className="card-price-section">
+                        <div className="price-left-group">
+                          <span className="price-discounted">
+                            ${typeof model.price === 'number' ? model.price.toLocaleString(undefined, {minimumFractionDigits: 0}) : model.price}
+                          </span>
+                          <span className="price-original">
+                            ${typeof model.originalPrice === 'number' ? model.originalPrice.toFixed(2) : model.originalPrice}
+                          </span>
+                        </div>
+                        <span className="price-extra">
+                          ${model.extraPrice}
+                        </span>
+                      </div>
+
+                      {/* Add to Cart button */}
+                      <button 
+                        className="add-to-cart-btn"
+                        onClick={(e) => handleAddToCart(model, e)}
+                      >
+                        Add to Cart
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+
+            {/* Right navigation arrow */}
+            <button 
+              className="carousel-nav-btn"
+              onClick={() => setActiveIndex(prev => (prev + 1) % models.length)}
+              aria-label="Next Item"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Toast Notification Popup */}
+          {toastMessage && (
+            <div className="luxury-toast">
+              <span className="luxury-toast-icon"></span>
+              <span>{toastMessage}</span>
+            </div>
+          )}
         </motion.div>
       ) : (
         /* Fullscreen 3D Details and rotating viewport stage */

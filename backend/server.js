@@ -21,7 +21,10 @@ const defaultJewelry = [
     modelId: 'gold_necklace',
     name: 'Classic 18K Gold Rope Chain',
     material: '18K Yellow Gold Solid',
-    price: 1299.00,
+    price: 7999.00,
+    originalPrice: 99.00,
+    subtitle: 'Refined & Sleek',
+    extraPrice: '325.00',
     description: 'A classic 18-karat solid yellow gold rope chain, featuring diamond-cut detailing for maximum light reflection and sparkle.',
     weight: '24.5g',
     glbPath: '/models/gold_necklace__chain.glb'
@@ -30,7 +33,10 @@ const defaultJewelry = [
     modelId: 'cuban_chain',
     name: 'Miami Cuban Link Choker',
     material: '14K Yellow Gold Solid',
-    price: 3450.00,
+    price: 3169.00,
+    originalPrice: 69.00,
+    subtitle: 'Rustic Choker',
+    extraPrice: '35.00',
     description: 'An iconic heavy Miami Cuban link choker, featuring hand-polished solid 14-karat gold with a custom security clasp.',
     weight: '62.1g',
     glbPath: '/models/cuban_chain.glb'
@@ -39,7 +45,10 @@ const defaultJewelry = [
     modelId: 'chain_set',
     name: 'Signature Double Chain Combo',
     material: '18K Gold & Sterling Silver',
-    price: 7800.00,
+    price: 7699.00,
+    originalPrice: 99.00,
+    subtitle: 'Double Choker',
+    extraPrice: '73.00',
     description: 'A premium double-layered necklace set combining a thick Cuban link in sterling silver and a classic rope chain in 18K solid yellow gold.',
     weight: '88.3g',
     glbPath: '/models/chain_set.glb'
@@ -49,11 +58,10 @@ const defaultJewelry = [
 // Helper to seed the database
 const seedDatabase = async () => {
   try {
-    const count = await Jewelry.countDocuments();
-    if (count === 0) {
-      await Jewelry.insertMany(defaultJewelry);
-      console.log('Seeded default jewelry items in database.');
-    }
+    // Delete existing records to ensure new fields are populated
+    await Jewelry.deleteMany({});
+    await Jewelry.insertMany(defaultJewelry);
+    console.log('Cleared database and seeded default jewelry items.');
   } catch (err) {
     console.error('Error seeding jewelry database:', err.message);
   }
