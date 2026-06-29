@@ -206,10 +206,20 @@ export default function App() {
         /* Catalog Homepage view displaying cards dynamically */
         <motion.div 
           key="catalog"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          initial={{ opacity: 0, backgroundColor: '#070605' }}
+          animate={{ 
+            opacity: 1, 
+            backgroundColor: ['#3a2d16', '#070605', '#3a2d16', '#070605']
+          }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ 
+            opacity: { duration: 0.5 },
+            backgroundColor: {
+              duration: 12,
+              repeat: Infinity,
+              ease: 'easeInOut'
+            }
+          }}
           className="catalog-view"
         >
           {/* Animated Glow Spotlights */}
@@ -241,7 +251,7 @@ export default function App() {
               style={{ justifyContent: 'center', marginBottom: '20px' }}
             >
               <span className="brand-dot" style={{ backgroundColor: '#e5c07b', boxShadow: '0 0 12px #e5c07b' }}></span>
-              <span className="brand-text" style={{ color: '#FAF6EC' }}>MERN SPACE</span>
+              <span className="brand-text" style={{ color: '#FAF6EC' }}>MEGHA JEWELLARS</span>
             </motion.div>
             
             <motion.h2 
@@ -406,7 +416,7 @@ export default function App() {
                     boxShadow: `0 0 12px ${activeModel.accentColor}` 
                   }}
                 ></span>
-                <span className="brand-text" style={{ color: activeModel.textColor }}>MERN SPACE</span>
+                <span className="brand-text" style={{ color: activeModel.textColor }}>MEGHA JEWELLARS</span>
               </div>
 
               <button 
